@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat em Tempo Real (SSE)</title>
+</head>
+<body>
+  <h1>Chat em Tempo Real (SSE)</h1>
+  <div id="messages"></div>
+  <form id="message-form">
+    <input type="text" id="message-input" placeholder="Digite sua mensagem">
+    <button type="submit">Enviar</button>
+  </form>
+
+  <script>
+    const messagesDiv = document.getElementById('messages');
+    const messageForm = document.getElementById('message-form');
+    const messageInput = document.getElementById('message-input');
+
+    // Função para adicionar mensagem à interface do usuário
+    function addMessage(message) {
+      const p = document.createElement('p');
+      p.textContent = message;
+      messagesDiv.appendChild(p);
+    }
+
+    // Função para enviar mensagem para o servidor
+    function sendMessage(message) {
+      fetch('/message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message })
+      })
+      .then(response => response.text())
+      .then(data => console.log(data))
+      .catch(error => console.error('Erro ao enviar mensagem:', error));
+    }
+
+    // Event listener para enviar mensagem quando o formulário for enviado
+    messageForm.addEventListener('submit', event => {
+      event.preventDefault();
+      const message = messageInput.value.trim();
+      if (message !== '') {
+        sendMessage(message);
+        messageInput.value = '';
+      }
+    });
+
+    // Event listener para receber mensagens do servidor via SSE
+    const eventSource = new EventSource('/events');
+    eventSource.onmessage = event => {
+      const message = JSON.parse(event.data);
+      addMessage(`${message.username || 'Anônimo'}: ${message.message}`);
+    };
+  </script>
+</body>
+</html>
